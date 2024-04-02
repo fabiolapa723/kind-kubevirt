@@ -18,3 +18,33 @@ sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 -----------
 echo 'source <(kubectl completion bash)' >>~/.bashrc
 -----------
+# Point at latest release
+$ export RELEASE=$(curl https://storage.googleapis.com/kubevirt-prow/release/kubevirt/kubevirt/stable.txt)
+# Deploy the KubeVirt operator
+$ kubectl apply -f https://github.com/kubevirt/kubevirt/releases/download/${RELEASE}/kubevirt-operator.yaml
+# Create the KubeVirt CR (instance deployment request) which triggers the actual installation
+$ kubectl apply -f https://github.com/kubevirt/kubevirt/releases/download/${RELEASE}/kubevirt-cr.yaml
+# wait until all KubeVirt components are up
+$ kubectl -n kubevirt wait kv kubevirt --for condition=Available
+----
+(
+  set -x; cd "$(mktemp -d)" &&
+  OS="$(uname | tr '[:upper:]' '[:lower:]')" &&
+  ARCH="$(uname -m | sed -e 's/x86_64/amd64/' -e 's/\(arm\)\(64\)\?.*/\1\2/' -e 's/aarch64$/arm64/')" &&
+  KREW="krew-${OS}_${ARCH}" &&
+  curl -fsSLO "https://github.com/kubernetes-sigs/krew/releases/latest/download/${KREW}.tar.gz" &&
+  tar zxvf "${KREW}.tar.gz" &&
+  ./"${KREW}" install krew
+)
+----
+no .bashrc
+export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"
+----
+kubectl krew install virt
+----
+export VERSION=$(basename $(curl -s -w %{redirect_url} https://github.com/kubevirt/containerized-data-importer/releases/latest))
+kubectl create -f https://github.com/kubevirt/containerized-data-importer/releases/download/$VERSION/cdi-operator.yaml
+kubectl create -f https://github.com/kubevirt/containerized-data-importer/releases/download/$VERSION/cdi-cr.yaml
+----
+https://github.com/kubevirt/containerized-data-importer?tab=readme-ov-file
+----
