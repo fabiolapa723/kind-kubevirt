@@ -1,2 +1,1 @@
 # kind-kubevirt
-# kind-kubevirt
